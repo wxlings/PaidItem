@@ -1,0 +1,143 @@
+//https://stackoverflow.com/questions/24860659/multi-flavor-app-based-on-multi-flavor-library-in-android-gradle
+apply plugin: 'com.android.application'
+
+android {
+
+    compileSdkVersion rootProject.ext.compileSdkVersion
+    buildToolsVersion = rootProject.ext.buildToolsVersion
+    defaultConfig {
+        applicationId "com.wxl.paiditem"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        multiDexEnabled = true //为方法数超过 64K 的应用启用多 dex 文件
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        manifestPlaceholders = [hostName:"www.example.com"]
+    }
+    /**
+     * 签名配置:声明多环境多变体APK的签名信息
+     */
+    signingConfigs {
+        // 这里签名信息放在独立的管理文件,避免与项目共存,保证安全性
+        def keyPropsFile = file(getRootDir().getPath() + File.separator + 'key.properties')
+        if(keyPropsFile.canRead()){
+            Properties keyProps = new Properties()
+            keyProps.load(new FileInputStream(keyPropsFile))
+            release {
+//              storeFile file(getRootDir().getPath() + File.separator + 'key-store.jks')
+                storeFile = file(keyProps.get('release_store_file'))
+                storePassword = keyProps.get('release_store_password')
+                keyAlias = keyProps.get('release_key_alias')
+                keyPassword = keyProps.get('release_key_password')
+                v2SigningEnabled = keyProps.get('release_v2_enable') as boolean
+            }
+            debug{
+                v2SigningEnabled = keyProps.get('release_v2_enable') as boolean
+            }
+        }else {
+            throw new GradleScriptException('Key-store file can`t readable!')
+        }
+    }
+    buildTypes {
+        release {
+            buildConfigField 'boolean','dev','false'
+            /**
+             * 指定签名配置
+             */
+            signingConfig signingConfigs.release
+            /**
+             * 是否打开调试模式及日志输出
+             */
+            debuggable false
+            /**
+             * Enables code shrinking for the release build type. 优化压缩 缩减代码
+             * 当应用包含许多库依赖项，但只会使用它们的一小部分功能时,会移除没有用到的代码
+             */
+            minifyEnabled true
+            /**
+             *  压缩对齐
+             */
+            zipAlignEnabled true
+            /**
+             * dex 文件拆分
+             */
+            multiDexEnabled = true
+            /**
+             * 指定需要的混淆文件
+             */
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        preview {
+            debuggable = true
+            jniDebuggable = true
+            renderscriptDebuggable = true
+            signingConfig signingConfigs.release
+            minifyEnabled = true
+            multiDexEnabled = true
+            applicationIdSuffix '.preview'
+            versionNameSuffix '.preview'
+            buildConfigField 'boolean','dev','false'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            jniDebuggable = true
+            renderscriptDebuggable = true
+            signingConfig signingConfigs.debug
+            minifyEnabled = true
+            multiDexEnabled = true
+            applicationIdSuffix '.debug'
+            versionNameSuffix '.debug'
+            buildConfigField 'boolean','dev','true'
+        }
+    }
+    compileOptions {
+        sourceCompatibility = 1.8
+        targetCompatibility = 1.8
+    }
+    lintOptions {
+        checkReleaseBuilds false
+        // Or, if you prefer, you can continue to check for errors in release builds,
+        // but continue the build even when errors are found:
+        abortOnError false
+    }
+    flavorDimensions 'platform'
+    productFlavors {
+        inland {
+            dimension = 'platform'
+            versionCode = 2
+            versionName = '2.0.1'
+            versionNameSuffix = '.inland'
+            buildConfigField 'String','HOST','"https://inland.wxl.com/api/"'
+            buildConfigField 'int','UNI_ID','1305521500'
+            buildConfigField 'String','APP_SN','"dfnh2s"'
+        }
+        google{
+            dimension = 'platform'
+            resConfigs "en", "zh"
+            versionCode = 3
+            versionName = '3.0.1'
+            versionNameSuffix = '.google'
+            buildConfigField 'String','HOST','"https://google.wxl.com/api/"'
+            buildConfigField 'int','UNI_ID','1305521500'
+            buildConfigField 'String','APP_SN','"dfnh2s"'
+        }
+    }
+    applicationVariants.all { variant ->
+        variant.outputs.all {
+            outputFileName = "${variant.flavorName.toUpperCase()}_${getTimeStr()}_V${variant.versionName}.apk"
+        }
+    }
+}
+
+static String getTimeStr(){
+    return new Date().format("yyMMddHHmm")
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+
+    implementation 'com.android.support:appcompat-v7:28.0.0'
+    implementation 'com.android.support.constraint:constraint-layout:1.1.3'
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'com.android.support.test:runner:1.0.2'
+    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+}
