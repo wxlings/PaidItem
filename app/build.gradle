@@ -1,4 +1,4 @@
-//https://stackoverflow.com/questions/24860659/multi-flavor-app-based-on-multi-flavor-library-in-android-gradle
+//插件属性详情：http://google.github.io/android-gradle-dsl/current/
 apply plugin: 'com.android.application'
 
 android {
@@ -14,9 +14,9 @@ android {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         multiDexEnabled = true //为方法数超过 64K 的应用启用多 dex 文件
-        buildConfigField 'int','UNI_ID','1305521500' // 向BuildConfig中注入变量
+        buildConfigField 'int', 'UNI_ID', '1305521500' // 向BuildConfig中注入变量
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-        manifestPlaceholders = [hostName:"www.example.com"]
+        manifestPlaceholders = [hostName: "www.example.com"]
     }
     /**
      * 签名配置:声明多环境多变体APK的签名信息
@@ -24,7 +24,7 @@ android {
     signingConfigs {
         // 这里签名信息放在独立的管理文件,避免与项目共存,保证安全性
         def keyPropsFile = file(getRootDir().getPath() + File.separator + 'key.properties')
-        if(keyPropsFile.canRead()){
+        if (keyPropsFile.canRead()) {
             Properties keyProps = new Properties()
             keyProps.load(new FileInputStream(keyPropsFile))
             release {
@@ -35,10 +35,10 @@ android {
                 keyPassword = keyProps.get('release_key_password')
                 v2SigningEnabled = keyProps.get('release_v2_enable') as boolean
             }
-            debug{
+            debug {
                 v2SigningEnabled = keyProps.get('release_v2_enable') as boolean
             }
-        }else {
+        } else {
             throw new GradleScriptException('Key-store file can`t readable!')
         }
     }
@@ -47,7 +47,7 @@ android {
      */
     buildTypes {
         release {
-            buildConfigField 'boolean','dev','false'
+            buildConfigField 'boolean', 'dev', 'false'
             signingConfig signingConfigs.release
             debuggable false
             zipAlignEnabled true
@@ -63,26 +63,28 @@ android {
         }
         preview {
             debuggable = true
-            jniDebuggable = true
             renderscriptDebuggable = true
             signingConfig signingConfigs.release
             minifyEnabled = true
             applicationIdSuffix '.preview'
             versionNameSuffix '.preview'
-            buildConfigField 'boolean','dev','false'
+            buildConfigField 'boolean', 'dev', 'false'
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         debug {
-            jniDebuggable = true
             renderscriptDebuggable = true
             signingConfig signingConfigs.debug
             minifyEnabled = true
             multiDexEnabled = true
             applicationIdSuffix '.debug'
             versionNameSuffix '.debug'
-            buildConfigField 'boolean','dev','true'
+            buildConfigField 'boolean', 'dev', 'true'
+            ext.enableCrashlytics = false
         }
     }
+    /**
+     * Java compilation options.
+     */
     compileOptions {
         sourceCompatibility = 1.8
         targetCompatibility = 1.8
@@ -100,20 +102,21 @@ android {
     productFlavors {
         inland {
             dimension = 'platform'
+            resConfigs "zh"
             versionCode = 1 //系统可以通过该值防止用户进行app降级
             versionName = '1.0.1' // 向用户展示相关版本信息
             versionNameSuffix = '.inland'
-            buildConfigField 'String','HOST','"https://inland.wxl.com/api/"'
-            buildConfigField 'String','APP_SN','"dfnh2s"'
+            buildConfigField 'String', 'HOST', '"https://inland.wxl.com/api/"'
+            buildConfigField 'String', 'APP_SN', '"dfnh2s"'
         }
-        google{
+        google {
             dimension = 'platform'
             resConfigs "en", "zh" // 指定需要的语言资源包
             versionCode = 3
             versionName = '3.0.1'
             versionNameSuffix = '.google'
-            buildConfigField 'String','HOST','"https://google.wxl.com/api/"'
-            buildConfigField 'String','APP_SN','"dfnh2s"'
+            buildConfigField 'String', 'HOST', '"https://google.wxl.com/api/"'
+            buildConfigField 'String', 'APP_SN', '"dfnh2s"'
         }
     }
     applicationVariants.all { variant ->
@@ -123,7 +126,7 @@ android {
     }
 }
 
-static String getTimeStr(){
+static String getTimeStr() {
     return new Date().format("yyMMddHHmm")
 }
 
